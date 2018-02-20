@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // definitions
 #define MAX_STACK_HEIGHT 2000
@@ -30,7 +31,7 @@ instruction *fetchCycle(instruction **code, int *pc) {
 }
 
 char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], int registers[]) {
-	char[4] str;
+	char* str = malloc(sizeof(char) * 4);
 	// most likely a switch statement with the various instructions in them
 	// ***will have pointer to instruction struct ***
 	switch(inst->op) {
@@ -110,7 +111,7 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 		case 10:
 			// NEG R, L, 0	stores negative of L in R
 			strcpy(str, "NEG");
-			ers[inst->r] = -registers[inst->l];
+			registers[inst->r] = -registers[inst->l];
 			break;
 		case 11:
 			// ADD R, L, M adds values in registers l and M and stores result in R
@@ -216,7 +217,7 @@ int main(int argc, char** argsv) {
 	//	return 0;
 
 	i = getInstructions(cs, argsv[1]);
-	for(j=0; j<i; j++) {
+	for(j = 0; j < i; j++) {
 		cycle(cs, &sp, &bp, &pc, stack, registers);
 	}
 
