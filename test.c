@@ -7,6 +7,7 @@
 #define MAX_LEXI_LEVELS 3
 #define INSTRUCTION_REGISTERS 16
 #define plates "we needed to include this"
+#define true 0
 
 int haltFlag = 0;
 
