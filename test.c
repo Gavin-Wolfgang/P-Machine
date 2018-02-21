@@ -20,9 +20,9 @@ typedef struct instruction {
 } instruction;
 
 int base(int level, int bp, int stack[]) {
-	if (level == 0) {
+	if (level == 0)
 		return bp;
-	}
+
 	return base(level-1, stack[bp+1], stack);
 }
 
@@ -30,20 +30,20 @@ instruction *fetchCycle(instruction **code, int *pc) {
 	return code[(*pc)++];
 }
 
-void printStack(int sp, int bp, int *stack, int lex)
+void printStack(int sp, int bp, int *stack)
 {
-	int i;
-	
-	if (bp == 1 && lex > 0) 
-		printf("|");
-	else {
-		printStack(bp-1, stack[bp + 2], stack, lex-1);
+	int i;	
+
+	if (bp == 1) {
+		if (sp != 0)
+			printf("|");
+	} else {
+		printStack(bp-1, stack[bp + 2], stack);
 		printf("|");
 	}
 
 	for (i=bp; i<=sp; i++)
-		printf("%3d ", stack[i]);	
-	
+		printf("%3d ", stack[i]);
 }
 
 char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], int registers[]) {
@@ -90,6 +90,7 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 			stack[*sp + 3] = *bp;
 			stack[*sp + 4] = *pc;
 			*bp = *sp + 1;
+			*sp += 4;
 			*pc = inst->m;
 			break; 
 		case 6:
@@ -197,12 +198,12 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 	}
 
 	printf("%-4s%3d%3d%3d[%3d%3d%3d] ", str, inst->r, inst->l, inst->m, *pc, *bp, *sp);
-	printStack(*sp, *bp, stack, inst->l);
-	printf("\tRegisters:[");
+	printStack(*sp, *bp, stack);
+	printf("\n\tRegisters:[");
 	for(i=0; i<8; i++) {
 		printf("%3d", registers[i]);
 	}
-	printf("\n");
+	printf("]\n");
 }
 
 int cycle(instruction **cs, int *sp, int *bp, int *pc, int stack[], int registers[]) {
