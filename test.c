@@ -30,8 +30,25 @@ instruction *fetchCycle(instruction **code, int *pc) {
 	return code[(*pc)++];
 }
 
+void printStack(int sp, int bp, int *stack, int lex)
+{
+	int i;
+	
+	if (bp == 1 && lex > 0) 
+		printf("|");
+	else {
+		printStack(bp-1, stack[bp + 2], stack, lex-1);
+		printf("|");
+	}
+
+	for (i=bp; i<=sp; i++)
+		printf("%3d ", stack[i]);	
+	
+}
+
 char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], int registers[]) {
 	char* str = malloc(sizeof(char) * 4);
+	int i;
 	// most likely a switch statement with the various instructions in them
 	// ***will have pointer to instruction struct ***
 	switch(inst->op) {
@@ -101,12 +118,16 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 			strcpy(str, "SIO");
 			switch(inst->m) {
 				case 1:
-					strcpy(str, "");		scanf("%d", registers[inst->r]);
+					printf("%d\n", registers[inst->r]);
+					break;
+				case 2:
+					scanf("%d", &registers[inst->r]);
 					break;
 				case 3:
 					haltFlag = 1;
 					break;
 			}
+
 			break;
 		case 10:
 			// NEG R, L, 0	stores negative of L in R
@@ -174,7 +195,14 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 			registers[inst->r] = (registers[inst->l] >= registers[inst->m]);
 			break;
 	}
-	return str;
+
+	printf("%-4s%3d%3d%3d[%3d%3d%3d] ", str, inst->r, inst->l, inst->m, *pc, *bp, *sp);
+	printStack(*sp, *bp, stack, inst->l);
+	printf("\tRegisters:[");
+	for(i=0; i<8; i++) {
+		printf("%3d", registers[i]);
+	}
+	printf("\n");
 }
 
 int cycle(instruction **cs, int *sp, int *bp, int *pc, int stack[], int registers[]) {
@@ -216,6 +244,8 @@ int main(int argc, char** argsv) {
 	//if(argc < 2)
 	//	return 0;
 
+
+	printf("\n OP   Rg Lx Vl[ PC BP SP]\n");
 	i = getInstructions(cs, argsv[1]);
 	for(j = 0; j < i; j++) {
 		cycle(cs, &sp, &bp, &pc, stack, registers);
