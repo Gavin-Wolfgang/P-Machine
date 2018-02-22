@@ -30,23 +30,23 @@ instruction *fetchCycle(instruction **code, int *pc) {
 	return code[(*pc)++];
 }
 
-void printStack(int sp, int bp, int *stack)
+void printStack(int sp, int bp, int *stack, int lex)
 {
 	int i;	
 
 	if (bp == 1) {
-		if (sp != 0)
+		if (lex > 0)
 			printf("|");
 	} else {
-		printStack(bp-1, stack[bp + 2], stack);
+		printStack(bp-1, stack[bp+2], stack, lex-1);
 		printf("|");
 	}
 
-	for (i=bp; i<=sp; i++)
+	for (i=bp-1; i<sp; i++)
 		printf("%3d ", stack[i]);
 }
 
-char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], int registers[]) {
+char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int stack[], int registers[]) {
 	char* str = malloc(sizeof(char) * 4);
 	int i;
 	// most likely a switch statement with the various instructions in them
@@ -64,6 +64,7 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 			//				bp <- stack[sp + 3]; 
 			//				pc <- stack[sp + 4]
 			// return from subroutine and restore caller enviornment 
+			*lex -= 1;
 			strcpy(str, "RTN");
 			*sp = *bp - 1;
 			*bp = stack[*sp + 3];
@@ -85,6 +86,7 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 			// CAL 0, L, M  then whats below
 			// Call procedure with code at M. Creates new activation record
 			strcpy(str, "CAL");
+			*lex += 1;
 			stack[*sp + 1] = 0;
 			stack[*sp + 2] = base(inst->l, *bp, stack);
 			stack[*sp + 3] = *bp;
@@ -198,7 +200,7 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 	}
 
 	printf("%-4s%3d%3d%3d[%3d%3d%3d] ", str, inst->r, inst->l, inst->m, *pc, *bp, *sp);
-	printStack(*sp, *bp, stack);
+	printStack(*sp, *bp, stack, *lex);
 	printf("\n\tRegisters:[");
 	for(i=0; i<8; i++) {
 		printf("%3d", registers[i]);
@@ -206,14 +208,14 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int stack[], in
 	printf("]\n");
 }
 
-int cycle(instruction **cs, int *sp, int *bp, int *pc, int stack[], int registers[]) {
+int cycle(instruction **cs, int *sp, int *bp, int *pc, int *lex, int stack[], int registers[]) {
 
 	// Lots of code will go here, for now just outlining the steps we need to go through
 	// first we get an instruction from the "code" store and put it in the IR
 	instruction *inst = fetchCycle(cs, pc);
 	
 	// Executes the instruction fetched
-	executeCycle(inst, sp, bp, pc, stack, registers);
+	executeCycle(inst, sp, bp, pc, lex, stack, registers);
 	// The above two process are considered one cycle in the P-Machine
 	return 0;
 }
@@ -235,7 +237,7 @@ int getInstructions(instruction** cs, char* fName) {
 }
 
 int main(int argc, char** argsv) {
-	int i, j, sp=0, bp=1, pc=0;
+	int i, j, sp=0, bp=1, pc=0, lex=0;
 	// stack initialized to 0
 	int stack[MAX_STACK_HEIGHT] = {};
 	// initializes register files
@@ -249,7 +251,7 @@ int main(int argc, char** argsv) {
 	printf("\n OP   Rg Lx Vl[ PC BP SP]\n");
 	i = getInstructions(cs, argsv[1]);
 	for(j = 0; j < i; j++) {
-		cycle(cs, &sp, &bp, &pc, stack, registers);
+		cycle(cs, &sp, &bp, &pc, &lex, stack, registers);
 	}
 
 	return 0;
