@@ -6,7 +6,7 @@
 #define MAX_STACK_HEIGHT 2000
 #define MAX_CODE_LENGTH 500
 #define MAX_LEXI_LEVELS 3
-#define INSTRUCTION_REGISTERS 16
+#define INSTRUCTION_REGISTERS 8
 #define plates "we needed to include this"
 #define true 0
 
@@ -30,23 +30,26 @@ instruction *fetchCycle(instruction **code, int *pc) {
 	return code[(*pc)++];
 }
 
-void printStack(int sp, int bp, int *stack, int lex)
-{
-	int i;	
-
-	if (bp == 1) {
-		if (lex > 0)
+void printStack(int sp, int bp, int *stack, int lex){
+	 int i;
+	 if (bp == 1) {
+		if (lex > 0) {
 			printf("|");
-	} else {
-		printStack(bp-1, stack[bp+2], stack, lex-1);
-		printf("|");
-	}
-
-	for (i=bp-1; i<sp; i++)
-		printf("%3d ", stack[i]);
+	   }
+	 }	   
+	 else {
+		  //Print the lesser lexical level
+		  printStack(bp-1, stack[bp + 2], stack, lex-1);
+	  printf("|");
+	 }
+	 //Print the stack contents - at the current level
+	 for (i = bp; i <= sp; i++) {
+		 printf("%3d ", stack[i]);	
+	 }
 }
 
-char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int stack[], int registers[]) {
+
+void executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int stack[], int registers[]) {
 	char* str = malloc(sizeof(char) * 4);
 	int i;
 	// most likely a switch statement with the various instructions in them
@@ -64,7 +67,6 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int s
 			//				bp <- stack[sp + 3]; 
 			//				pc <- stack[sp + 4]
 			// return from subroutine and restore caller enviornment 
-			*lex -= 1;
 			strcpy(str, "RTN");
 			*sp = *bp - 1;
 			*bp = stack[*sp + 3];
@@ -74,19 +76,18 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int s
 			// LOD R, L, M  R[i] <- stack[base(L, bp) + M]
 			// load value from stack to register at offset M from L lexicographical levels down
 			strcpy(str, "LOD");
-			registers[inst->r] = stack[base(inst->l, *bp, stack) + inst->m];
+			registers[inst->r] = stack[base(inst->l, *bp, stack) + inst->m - 1];
 			break;
 		case 4:
 			// STO R, L, M  stack[base(L, bp) + M] <- R[i]
 			// store value from register to stack at offset M from L lexicographical levels down
 			strcpy(str, "STO");
-			stack[base(inst->l, *bp, stack) + inst->m] = registers[inst->r];
+			stack[base(inst->l, *bp, stack) + inst->m - 1] = registers[inst->r];
 			break;
 		case 5:
 			// CAL 0, L, M  then whats below
 			// Call procedure with code at M. Creates new activation record
 			strcpy(str, "CAL");
-			*lex += 1;
 			stack[*sp + 1] = 0;
 			stack[*sp + 2] = base(inst->l, *bp, stack);
 			stack[*sp + 3] = *bp;
@@ -199,6 +200,10 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int s
 			break;
 	}
 
+	if(strcmp(str, "RTN") == 0) {
+		*lex -= 1;
+	}
+
 	printf("%-4s%3d%3d%3d[%3d%3d%3d] ", str, inst->r, inst->l, inst->m, *pc, *bp, *sp);
 	printStack(*sp, *bp, stack, *lex);
 	printf("\n\tRegisters:[");
@@ -206,6 +211,10 @@ char* executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int s
 		printf("%3d", registers[i]);
 	}
 	printf("]\n");
+
+	if(strcmp(str, "CAL") == 0) {
+		*lex += 1;
+	}
 }
 
 int cycle(instruction **cs, int *sp, int *bp, int *pc, int *lex, int stack[], int registers[]) {
