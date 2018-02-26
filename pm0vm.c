@@ -1,3 +1,8 @@
+// COP 3402 Systems Software
+// Authors:
+// Suraj Singireddy (su365398)
+// Gavin Knopp (ga803888)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +12,6 @@
 #define MAX_CODE_LENGTH 500
 #define MAX_LEXI_LEVELS 3
 #define INSTRUCTION_REGISTERS 8
-#define plates "we needed to include this"
-#define true 0
 
 int haltFlag = 0;
 
@@ -112,7 +115,7 @@ void executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int st
 			// JPC R, 0, M  r[i] <- stack[base(L, bp) + M]
 			// jump to M if R = 0		conditional jump, WOOT!@!
 			strcpy(str, "JPC");
-			if(inst->m == 0)	
+			if(registers[inst->r] == 0)	
 				*pc = inst->m;
 			break;
 		case 9:
@@ -215,6 +218,8 @@ void executeCycle(instruction *inst, int *sp, int *bp, int *pc, int *lex, int st
 	if(strcmp(str, "CAL") == 0) {
 		*lex += 1;
 	}
+
+	free(str);
 }
 
 int cycle(instruction **cs, int *sp, int *bp, int *pc, int *lex, int stack[], int registers[]) {
@@ -234,6 +239,11 @@ int getInstructions(instruction** cs, char* fName) {
 	instruction* curInst = malloc(sizeof(instruction));
 	FILE *file = fopen(fName, "r");
 
+	if (!file) {
+		printf("Error: File does not exist.");
+		haltFlag = 1;
+	}
+
 	while(fscanf(file, "%d", &(curInst->op)) != EOF && i < MAX_CODE_LENGTH) {
 		fscanf(file, "%d", &(curInst->r));
 		fscanf(file, "%d", &(curInst->l));
@@ -241,6 +251,8 @@ int getInstructions(instruction** cs, char* fName) {
 		cs[i++] = curInst;
 		curInst = malloc(sizeof(instruction));
 	}
+
+	fclose(file);
 
 	return i;
 }
@@ -253,15 +265,19 @@ int main(int argc, char** argsv) {
 	int registers[INSTRUCTION_REGISTERS] = {};
 	instruction** cs = malloc(sizeof(instruction*) * MAX_CODE_LENGTH);
 
-	//if(argc < 2)
-	//	return 0;
+	if(argc < 2)
+		return 0;
 
 
 	printf("\n OP   Rg Lx Vl[ PC BP SP]\n");
 	i = getInstructions(cs, argsv[1]);
-	for(j = 0; j < i; j++) {
+
+	while (pc < i && !haltFlag) {
 		cycle(cs, &sp, &bp, &pc, &lex, stack, registers);
 	}
+
+	
+	free(cs);
 
 	return 0;
 }
