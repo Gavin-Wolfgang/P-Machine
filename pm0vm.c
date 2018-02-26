@@ -1,7 +1,8 @@
-// COP 3402 Systems Software
-// Authors:
-// Suraj Singireddy (su365398)
-// Gavin Knopp (ga803888)
+/*
+* COP3402 - Spring 2018
+* System Software Assignment 1
+* Submitted by: Suraj Singireddy (su365398), Gavin Knopp (ga803888)
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -276,7 +277,7 @@ int main(int argc, char** argsv) {
 		cycle(cs, &sp, &bp, &pc, &lex, stack, registers);
 	}
 
-	
+
 	free(cs);
 
 	return 0;
